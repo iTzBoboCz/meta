@@ -1,0 +1,38 @@
+version: "3.7"
+services:
+  galera-mariadb:
+    image: mariadb:10.5
+    container_name: galera-mariadb
+    volumes:
+      - ./docker/MariaDB:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=galera
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_PASSWORD=password
+      - MYSQL_USER=galera
+    restart: unless-stopped
+
+  galera:
+    build: ../galera
+    container_name: galera
+    depends_on:
+      - galera-mariadb
+    volumes:
+      - ./docker/Galera/media:/root/.local/share/galera/gallery
+    environment:
+      - DATABASE_URL=mysql://galera:password@galera-mariadb/galera
+      # - LOG_LEVEL=debug # options are: error, warn, info, debug and trace; error is default
+    ports:
+      - 5438:8000
+    restart: unless-stopped
+
+  galera-web:
+    build: ../galera-web
+    container_name: galera-web
+    depends_on:
+      - galera
+    environment:
+      - BACKEND_URL=http://galera:8000
+    ports:
+      - 5439:80
+    restart: unless-stopped
